@@ -12,6 +12,7 @@ export default class Main extends Component {
     newRepo: '',
     repositories: [],
     loading: false,
+    error: null,
   };
 
   componentDidMount() {
@@ -30,7 +31,7 @@ export default class Main extends Component {
   }
 
   handleInputChange = e => {
-    this.setState({ newRepo: e.target.value });
+    this.setState({ newRepo: e.target.value, error: null });
   };
 
   handleSubmit = async e => {
@@ -40,6 +41,12 @@ export default class Main extends Component {
       this.setState({ loading: true });
 
       const { newRepo, repositories } = this.state;
+
+      if (newRepo === '') throw 'Você precisa indicar um repositório';
+
+      const hasRepo = repositories.find(r => r.name === newRepo);
+
+      if (hasRepo) throw 'Repositório duplicado';
 
       const response = await api.get(`/repos/${newRepo}`);
       const { full_name: name, id } = response.data;
@@ -54,7 +61,7 @@ export default class Main extends Component {
         newRepo: '',
       });
     } catch (err) {
-      alert(err.message);
+      this.setState({ error: true });
       console.error(err);
     } finally {
       this.setState({ loading: false });
@@ -62,7 +69,7 @@ export default class Main extends Component {
   };
 
   render() {
-    const { newRepo, repositories, loading } = this.state;
+    const { newRepo, repositories, loading, error } = this.state;
 
     return (
       <Container>
@@ -71,7 +78,7 @@ export default class Main extends Component {
           Repositórios
         </h1>
 
-        <Form onSubmit={this.handleSubmit}>
+        <Form onSubmit={this.handleSubmit} error={error}>
           <input
             type="text"
             placeholder="Adicionar repositório"
@@ -87,7 +94,6 @@ export default class Main extends Component {
             )}
           </SubmitButton>
         </Form>
-
         <List>
           {repositories.map(repository => (
             <li key={repository.id}>
